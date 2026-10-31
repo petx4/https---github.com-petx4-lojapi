@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Produtos</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 30px auto; padding: 0 16px; background: #f4f4f4; }
+        h1 { color: #333; }
+        form, table { background: #fff; padding: 16px; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,.1); }
+        form { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        form input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        form button { grid-column: span 2; padding: 10px; background: #2d7ff9; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+        form button:hover { background: #1b66d6; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 8px; border-bottom: 1px solid #ddd; text-align: left; }
+        #mensagem { color: #c00; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+<h1>Cadastro de Produtos</h1>
+<p id="mensagem"></p>
+
+<!-- Formulario de cadastro: envia um POST para a API -->
+<form id="formulario">
+    <input type="text" id="nome" placeholder="Nome" required>
+    <input type="text" id="descricao" placeholder="Descricao">
+    <input type="number" id="preco" placeholder="Preco" step="0.01" required>
+    <input type="number" id="quantidade" placeholder="Quantidade" required>
+    <button type="submit">Cadastrar</button>
+</form>
+
+<!-- Tabela: preenchida com o GET da API -->
+<table>
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Nome</th>
+        <th>Descricao</th>
+        <th>Preco</th>
+        <th>Qtd</th>
+    </tr>
+    </thead>
+    <tbody id="lista"></tbody>
+</table>
+
+<script>
+    // Endereco da API Spring Boot
+    const API = 'http://localhost:8080/produtos';
+
+    const formulario = document.getElementById('formulario');
+    const lista = document.getElementById('lista');
+    const mensagem = document.getElementById('mensagem');
+
+    // GET /produtos - busca a lista no back-end e mostra na tabela
+    async function carregarProdutos() {
+        try {
+            const resposta = await fetch(API);
+            const produtos = await resposta.json();
+            lista.innerHTML = '';
+            produtos.forEach(p => {
+                lista.innerHTML += `
+                    <tr>
+                        <td>${p.id}</td>
+                        <td>${p.nome}</td>
+                        <td>${p.descricao ?? ''}</td>
+                        <td>R$ ${Number(p.preco).toFixed(2)}</td>
+                        <td>${p.quantidade}</td>
+                    </tr>`;
+            });
+            mensagem.textContent = '';
+        } catch (erro) {
+            mensagem.textContent = 'Nao foi possivel conectar na API. O Spring Boot esta rodando?';
+        }
+    }
+
+    // POST /produtos - envia o produto do formulario para o back-end
+    formulario.addEventListener('submit', async (evento) => {
+        evento.preventDefault();
+
+        const produto = {
+            nome: document.getElementById('nome').value,
+            descricao: document.getElementById('descricao').value,
+            preco: parseFloat(document.getElementById('preco').value),
+            quantidade: parseInt(document.getElementById('quantidade').value)
+        };
+
+        await fetch(API, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(produto)
+        });
+
+        formulario.reset();
+        carregarProdutos();
+    });
+
+    // Carrega a lista assim que a pagina abre
+    carregarProdutos();
+</script>
+
+</body>
+</html>
